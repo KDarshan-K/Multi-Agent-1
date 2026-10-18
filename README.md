@@ -5,17 +5,15 @@ and web search results, retrieves context from a knowledge base, and
 produces a cited research report — with a real critic/revision feedback
 loop.
 
-## Status: 100% — all 7 phases complete
 
-| Adds |
-|---|---|
-| 1 | Project skeleton, state schema, stdlib graph engine, Orchestrator, Market Agent, plain-template report |
-| 2 | News Agent + Search Agent, fan-out/converge execution, shared evidence store |
-| 3 | Unified MCP-style tool layer (mock MCP server + client); agents stop importing tool modules directly; added company_tools.py |
-| 4 | RAG/knowledge base — real TF-IDF + cosine similarity retrieval, as its own shared node (not nested under one agent) |
-| 5 | Real Analyst node — genuine HTTPS calls to the live Anthropic API, numbered [N] citations, graceful template fallback |
-| 6 | **Critic node + real conditional revise-loop** back to the Orchestrator, bounded by MAX_REVISIONS |
-| 7 | Checkpointing/persistence, `.gitignore`, final polish, this README |
+
+-| 1 | Project skeleton, state schema, stdlib graph engine, Orchestrator, Market Agent, plain-template report |
+-| 2 | News Agent + Search Agent, fan-out/converge execution, shared evidence store |
+-| 3 | Unified MCP-style tool layer (mock MCP server + client); agents stop importing tool modules directly; added company_tools.py |
+-| 4 | RAG/knowledge base — real TF-IDF + cosine similarity retrieval, as its own shared node (not nested under one agent) |
+-| 5 | Real Analyst node — genuine HTTPS calls to the live Anthropic API, numbered [N] citations, graceful template fallback |
+-| 6 | **Critic node + real conditional revise-loop** back to the Orchestrator, bounded by MAX_REVISIONS |
+-| 7 | Checkpointing/persistence, `.gitignore`, final polish, this README |
 
 ## ⚠️ Sandbox constraints (read this first)
 
