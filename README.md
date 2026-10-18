@@ -1,27 +1,10 @@
 # Research Agent — Multi-Agent Stock/News Research Pipeline
 
-<<<<<<< HEAD
-A LangGraph-style multi-agent orchestrator that gathers market data, news,
-and web search results, retrieves context from a knowledge base, and
-produces a cited research report — with a real critic/revision feedback
-loop.
-
-
-
--| 1 | Project skeleton, state schema, stdlib graph engine, Orchestrator, Market Agent, plain-template report |
--| 2 | News Agent + Search Agent, fan-out/converge execution, shared evidence store |
--| 3 | Unified MCP-style tool layer (mock MCP server + client); agents stop importing tool modules directly; added company_tools.py |
--| 4 | RAG/knowledge base — real TF-IDF + cosine similarity retrieval, as its own shared node (not nested under one agent) |
--| 5 | Real Analyst node — genuine HTTPS calls to the live Anthropic API, numbered [N] citations, graceful template fallback |
--| 6 | **Critic node + real conditional revise-loop** back to the Orchestrator, bounded by MAX_REVISIONS |
--| 7 | Checkpointing/persistence, `.gitignore`, final polish, this README |
-=======
 A production-grade, **LangGraph-driven** multi-agent orchestrator that gathers market data, company overviews, SEC filings, news, and live web search results, retrieves context from a hybrid semantic vector RAG engine, and produces a cited financial research report — powered by a bounded critic/revision feedback loop.
 
 ---
 
 ## 🌟 Key Upgrades & Architecture Enhancements
->>>>>>> review-multiagent-system-16512030288312706240
 
 - **Official LangGraph Orchestration (`langgraph`):** Converted workflow orchestration to official `langgraph.graph.StateGraph` with state channel reducers (`Annotated[list, operator.add]`) and partial update dicts.
 - **Smart Tool API Caching (`tools/cache.py`):** Added a lightweight TTL caching layer for external API calls (Alpha Vantage, Finnhub, SEC EDGAR, Tavily) to prevent rate-limit quota exhaustion across revision loops.
