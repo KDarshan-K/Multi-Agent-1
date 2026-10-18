@@ -1,13 +1,5 @@
 """
-Report finalizer (formerly the phase 1-4 template report writer).
-
-As of phase 5, agents/analyst.py owns drafting the actual prose (via LLM,
-with a template fallback). This node's job shrank to: take that draft,
-append a references appendix mapping each [N] citation back to its
-source/URL, and add a notes footer. Kept as a separate node (rather than
-folding into analyst.py) so citation formatting stays independent of
-synthesis — useful once phase 6's critic needs to re-run finalize after a
-revision without re-triggering a new LLM call for the same draft.
+Report finalizer node for official LangGraph.
 """
 
 from __future__ import annotations
@@ -29,10 +21,6 @@ def _references_section(state: ResearchState) -> list[str]:
 
 
 def _disambiguation_section(state: ResearchState) -> list[str]:
-    """Surfaces companies the orchestrator couldn't confidently resolve
-    to a single ticker, so the person can rerun with an explicit symbol
-    instead of getting a report that silently guessed (or silently
-    skipped) the wrong company."""
     if not state.unresolved_names:
         return []
 
@@ -59,7 +47,10 @@ def _disambiguation_section(state: ResearchState) -> list[str]:
     return lines
 
 
-def report_writer_node(state: ResearchState) -> ResearchState:
+def report_writer_node(state: ResearchState | dict) -> dict:
+    if isinstance(state, dict):
+        state = ResearchState.from_dict(state)
+
     lines = [
         f"# Research Report: {state.query}",
         f"_Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}_",
@@ -100,5 +91,4 @@ def report_writer_node(state: ResearchState) -> ResearchState:
     lines += notes
 
     report = "\n".join(lines)
-    state.final_report = report
-    return state
+    return {"final_report": report}

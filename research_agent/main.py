@@ -19,7 +19,13 @@ def run(query: str, verbose: bool = True) -> tuple[str, ResearchState]:
     run_id = uuid.uuid4().hex[:8]
     app = build_graph()
     initial_state = ResearchState(query=query)
-    final_state = app.invoke(initial_state, verbose=verbose)
+    result = app.invoke(initial_state)
+    if isinstance(result, ResearchState):
+        final_state = result
+    elif isinstance(result, dict):
+        final_state = ResearchState.from_dict(result)
+    else:
+        final_state = initial_state
     checkpoint.save(run_id, final_state)
     return run_id, final_state
 
