@@ -65,6 +65,19 @@
         .toggle-switch {
             cursor: pointer;
         }
+        .history-item {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .history-item:hover {
+            border-color: var(--accent-blue);
+            background-color: #1e293b;
+        }
     </style>
 </head>
 <body>
@@ -89,7 +102,7 @@
         </div>
 
         <div class="row g-4">
-            <!-- Left Column: Search & Graph Visualizer -->
+            <!-- Left Column: Search & Graph Visualizer & Saved History -->
             <div class="col-lg-5">
                 <div class="card p-4 mb-4">
                     <h5 class="card-title mb-3"><i class="bi bi-search me-2 text-info"></i>Research Request</h5>
@@ -105,7 +118,7 @@
                     </div>
                 </div>
 
-                <div class="card p-4">
+                <div class="card p-4 mb-4">
                     <h5 class="card-title mb-3"><i class="bi bi-diagram-3 me-2 text-info"></i>LangGraph Orchestration</h5>
                     <p class="text-secondary small mb-3">Live workflow node execution steps:</p>
                     <div id="graphNodes">
@@ -117,6 +130,16 @@
                         <span class="node-badge" id="node-analyst">6. Analyst Node</span>
                         <span class="node-badge" id="node-critic">7. Critic Node</span>
                         <span class="node-badge" id="node-writer">8. Report Writer</span>
+                    </div>
+                </div>
+
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title m-0"><i class="bi bi-clock-history me-2 text-info"></i>Browser Saved History</h5>
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearHistory()"><i class="bi bi-trash me-1"></i>Clear</button>
+                    </div>
+                    <div id="historyList">
+                        <p class="text-secondary small m-0">No saved browser reports yet. Generated reports automatically save to localStorage.</p>
                     </div>
                 </div>
             </div>
@@ -136,6 +159,8 @@
 
     <script>
         let isLive = true;
+
+        document.addEventListener('DOMContentLoaded', loadHistory);
 
         function toggleLiveStatus() {
             const toggle = document.getElementById('liveToggle');
@@ -165,6 +190,61 @@
             document.getElementById('queryInput').value = q;
         }
 
+        function getSavedReports() {
+            try {
+                return JSON.parse(localStorage.getItem('fin_graph_history')) || [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveReportToStorage(runId, query, reportText) {
+            const reports = getSavedReports();
+            const newEntry = {
+                runId: runId,
+                query: query,
+                timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                report: reportText
+            };
+            reports.unshift(newEntry);
+            localStorage.setItem('fin_graph_history', JSON.stringify(reports.slice(0, 20)));
+            loadHistory();
+        }
+
+        function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            const reports = getSavedReports();
+
+            if (reports.length === 0) {
+                historyList.innerHTML = '<p class="text-secondary small m-0">No saved browser reports yet. Generated reports automatically save to localStorage.</p>';
+                return;
+            }
+
+            historyList.innerHTML = reports.map((item, index) => `
+                <div class="history-item" onclick="viewHistoryItem(${index})">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="badge bg-secondary text-light">Run ID: ${item.runId}</span>
+                        <span class="text-secondary extra-small" style="font-size: 0.75rem;">${item.timestamp} UTC</span>
+                    </div>
+                    <div class="text-light fw-medium text-truncate small">${item.query}</div>
+                </div>
+            `).join('');
+        }
+
+        function viewHistoryItem(index) {
+            const reports = getSavedReports();
+            const item = reports[index];
+            if (!item) return;
+
+            document.getElementById('runIdBadge').innerText = `Run ID: ${item.runId}`;
+            document.getElementById('reportBox').innerText = item.report;
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('fin_graph_history');
+            loadHistory();
+        }
+
         async function runResearch() {
             if (!isLive) return;
 
@@ -177,17 +257,16 @@
 
             const nodeIds = ['orchestrator', 'market', 'news', 'search', 'rag', 'analyst', 'critic', 'writer'];
 
-            // Animate node progression
             for (let id of nodeIds) {
                 const badge = document.getElementById('node-' + id);
                 badge.classList.add('active');
-                await new Promise(r => setTimeout(r, 250));
+                await new Promise(r => setTimeout(r, 200));
             }
 
             const mockRunId = Math.random().toString(16).substring(2, 10);
             runIdBadge.innerText = `Run ID: ${mockRunId}`;
 
-            reportBox.innerText = `# Research Report: ${query}\n_Generated ${new Date().toISOString().replace('T', ' ').substring(0, 16)} UTC_\n\n` +
+            const generatedReport = `# Research Report: ${query}\n_Generated ${new Date().toISOString().replace('T', ' ').substring(0, 16)} UTC_\n\n` +
                 `## Executive Summary\n` +
                 `This report synthesizes market price action, sector fundamentals, recent corporate news, and internal knowledge base context for ${query}.\n\n` +
                 `- Market Performance: Market data gathered across active symbol trackers [1].\n` +
@@ -199,9 +278,12 @@
                 `- Executed through LangGraph StateGraph pipeline.\n` +
                 `- Checkpoint saved under run ID: ${mockRunId}.`;
 
+            reportBox.innerText = generatedReport;
+            saveReportToStorage(mockRunId, query, generatedReport);
+
             setTimeout(() => {
                 nodeIds.forEach(id => document.getElementById('node-' + id).classList.remove('active'));
-            }, 1000);
+            }, 800);
         }
     </script>
 </body>
