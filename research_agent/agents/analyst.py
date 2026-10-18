@@ -1,18 +1,5 @@
 """
-Analyst node — the real synthesis step.
-
-Replaces the phase 1-4 template-based report_writer as the DRAFT writer.
-Builds a numbered evidence list, asks the LLM to synthesize it into prose
-with inline [N] citations tied to that numbering, and stores the result in
-state.draft_report. report_writer.py (kept, now a lighter "finalize" step)
-appends a references appendix mapping [N] back to sources/URLs.
-
-FALLBACK BEHAVIOR: if no API key is set for the selected provider
-(config.LLM_PROVIDER), or the API call fails
-for any reason (auth, rate limit, network), this catches it and falls back
-to a template-based synthesis so the pipeline never crashes for lack of an
-API key. The fallback is clearly labeled in the output so it's never
-mistaken for a real LLM synthesis.
+Analyst node for official LangGraph.
 """
 
 from __future__ import annotations
@@ -41,13 +28,6 @@ def _build_user_prompt(state: ResearchState) -> str:
 
 
 def _fallback_synthesis(state: ResearchState) -> str:
-    """Deterministic, template-based synthesis — no LLM call.
-
-    This is a fallback, not the primary path. It groups evidence by
-    source type and writes plain sentences per group, still with [N]
-    citation numbers so the finalize step's references appendix behaves
-    identically regardless of which path produced the draft.
-    """
     lines = [
         "**[FALLBACK MODE — no LLM call made; see notes at the end]**",
         "",
@@ -59,20 +39,20 @@ def _fallback_synthesis(state: ResearchState) -> str:
     return "\n".join(lines)
 
 
-def analyst_node(state: ResearchState) -> ResearchState:
+def analyst_node(state: ResearchState | dict) -> dict:
+    if isinstance(state, dict):
+        state = ResearchState.from_dict(state)
+
     if not state.evidence:
-        state.draft_report = (
-            f"No evidence was gathered for the query: {state.query}"
-        )
-        return state
+        return {"draft_report": f"No evidence was gathered for the query: {state.query}"}
 
     user_prompt = _build_user_prompt(state)
 
     try:
         synthesis = llm.call_llm(_SYSTEM_PROMPT, user_prompt)
-        state.draft_report = synthesis
+        return {"draft_report": synthesis}
     except (llm.LLMNotConfiguredError, llm.LLMCallError) as e:
-        state.draft_report = _fallback_synthesis(state)
-        state.synthesis_fallback_reason = str(e)
-
-    return state
+        return {
+            "draft_report": _fallback_synthesis(state),
+            "synthesis_fallback_reason": str(e),
+        }
