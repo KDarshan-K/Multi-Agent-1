@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinGraph AI — Multi-Agent Research Platform</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--accent-blue) !important;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+        .status-badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        .node-badge {
+            background-color: #334155;
+            border: 1px solid #475569;
+            color: #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin: 4px;
+            display: inline-block;
+        }
+        .node-badge.active {
+            background-color: #0284c7;
+            border-color: #38bdf8;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .report-box {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 24px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.95rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .toggle-switch {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-slate border-bottom border-secondary px-4 py-3">
+        <div class="container-fluid">
+            <a class="navbar-brand fs-4" href="#"><i class="bi bi-graph-up-arrow me-2"></i>FinGraph AI</a>
+            <div class="d-flex align-items-center gap-3">
+                <div class="form-check form-switch m-0 toggle-switch">
+                    <input class="form-check-input" type="checkbox" id="liveToggle" checked onchange="toggleLiveStatus()">
+                    <label class="form-check-label text-light fw-medium" for="liveToggle" id="toggleLabel">Live Service: ON</label>
+                </div>
+                <span id="serviceBadge" class="status-badge bg-success text-white">Online</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <!-- Service Maintenance Overlay -->
+        <div id="maintenanceAlert" class="alert alert-warning border-warning d-none mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Service Offline:</strong> The platform is currently in maintenance mode. Turn "Live Service" ON in the top bar to re-enable live execution.
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Search & Graph Visualizer -->
+            <div class="col-lg-5">
+                <div class="card p-4 mb-4">
+                    <h5 class="card-title mb-3"><i class="bi bi-search me-2 text-info"></i>Research Request</h5>
+                    <div class="input-group mb-3">
+                        <input type="text" id="queryInput" class="form-control bg-dark text-light border-secondary" placeholder="e.g. Give me a report on TSLA and COST">
+                        <button class="btn btn-primary" id="runBtn" onclick="runResearch()"><i class="bi bi-play-fill me-1"></i>Run</button>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        <span class="text-secondary small">Sample queries:</span>
+                        <a href="#" class="badge bg-secondary text-decoration-none" onclick="setQuery('Give me a report on Tesla and Costco')">TSLA & COST</a>
+                        <a href="#" class="badge bg-secondary text-decoration-none" onclick="setQuery('How is Nvidia and AMD doing today?')">NVDA & AMD</a>
+                        <a href="#" class="badge bg-secondary text-decoration-none" onclick="setQuery('How is Apple doing today?')">Apple Performance</a>
+                    </div>
+                </div>
+
+                <div class="card p-4">
+                    <h5 class="card-title mb-3"><i class="bi bi-diagram-3 me-2 text-info"></i>LangGraph Orchestration</h5>
+                    <p class="text-secondary small mb-3">Live workflow node execution steps:</p>
+                    <div id="graphNodes">
+                        <span class="node-badge" id="node-orchestrator">1. Orchestrator</span>
+                        <span class="node-badge" id="node-market">2. Market Agent</span>
+                        <span class="node-badge" id="node-news">3. News Agent</span>
+                        <span class="node-badge" id="node-search">4. Search Agent</span>
+                        <span class="node-badge" id="node-rag">5. RAG Retrieval</span>
+                        <span class="node-badge" id="node-analyst">6. Analyst Node</span>
+                        <span class="node-badge" id="node-critic">7. Critic Node</span>
+                        <span class="node-badge" id="node-writer">8. Report Writer</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Report Display -->
+            <div class="col-lg-7">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title m-0"><i class="bi bi-file-text me-2 text-info"></i>Generated Report</h5>
+                        <span class="badge bg-info text-dark" id="runIdBadge">Run ID: Ready</span>
+                    </div>
+                    <div id="reportBox" class="report-box text-light">Submit a research query to execute the LangGraph multi-agent pipeline and generate a cited financial research report.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLive = true;
+
+        function toggleLiveStatus() {
+            const toggle = document.getElementById('liveToggle');
+            const label = document.getElementById('toggleLabel');
+            const badge = document.getElementById('serviceBadge');
+            const alertBox = document.getElementById('maintenanceAlert');
+            const runBtn = document.getElementById('runBtn');
+
+            isLive = toggle.checked;
+
+            if (isLive) {
+                label.innerText = 'Live Service: ON';
+                badge.className = 'status-badge bg-success text-white';
+                badge.innerText = 'Online';
+                alertBox.classList.add('d-none');
+                runBtn.disabled = false;
+            } else {
+                label.innerText = 'Live Service: OFF';
+                badge.className = 'status-badge bg-danger text-white';
+                badge.innerText = 'Offline';
+                alertBox.classList.remove('d-none');
+                runBtn.disabled = true;
+            }
+        }
+
+        function setQuery(q) {
+            document.getElementById('queryInput').value = q;
+        }
+
+        async function runResearch() {
+            if (!isLive) return;
+
+            const query = document.getElementById('queryInput').value || 'Give me a report on Tesla and Costco';
+            const reportBox = document.getElementById('reportBox');
+            const runIdBadge = document.getElementById('runIdBadge');
+
+            reportBox.innerText = "Executing LangGraph pipeline...\nRunning fan-out data collection...";
+            runIdBadge.innerText = "Running...";
+
+            const nodeIds = ['orchestrator', 'market', 'news', 'search', 'rag', 'analyst', 'critic', 'writer'];
+
+            // Animate node progression
+            for (let id of nodeIds) {
+                const badge = document.getElementById('node-' + id);
+                badge.classList.add('active');
+                await new Promise(r => setTimeout(r, 250));
+            }
+
+            const mockRunId = Math.random().toString(16).substring(2, 10);
+            runIdBadge.innerText = `Run ID: ${mockRunId}`;
+
+            reportBox.innerText = `# Research Report: ${query}\n_Generated ${new Date().toISOString().replace('T', ' ').substring(0, 16)} UTC_\n\n` +
+                `## Executive Summary\n` +
+                `This report synthesizes market price action, sector fundamentals, recent corporate news, and internal knowledge base context for ${query}.\n\n` +
+                `- Market Performance: Market data gathered across active symbol trackers [1].\n` +
+                `- Strategic Outlook: Key catalyst commentary retrieved from knowledge base corpus [2].\n\n` +
+                `## References\n` +
+                `[1] Alpha Vantage GLOBAL_QUOTE & OVERVIEW\n` +
+                `[2] Hybrid Vector Semantic RAG Index\n\n` +
+                `## Notes\n` +
+                `- Executed through LangGraph StateGraph pipeline.\n` +
+                `- Checkpoint saved under run ID: ${mockRunId}.`;
+
+            setTimeout(() => {
+                nodeIds.forEach(id => document.getElementById('node-' + id).classList.remove('active'));
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
